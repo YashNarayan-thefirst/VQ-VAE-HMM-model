@@ -1,0 +1,24 @@
+Sequence x = (x1...xn)
+encoder = encode(x)
+decoder = map(z_q -> x_hat)
+embedding_vectors = [_]*k
+codebook = mat(k,d)
+quantizer = ...
+loss_vqvae = loss(...)
+optimizer_vqvae = ...
+
+train_vqvae(epochs, data_loader, encoder, decoder, codebook, optimizer_vqvae):
+    for epoch in range(1,epochs):
+        for x_seq in data_loader:
+        z_e_seq = encoder(x_seq)
+        quantized_sequence, codebook_indices = quantize(z_e_sequence, codebook)
+        z_q_sequence_st = z_e_sequence + (quantized_sequence - z_e_sequence).detach()
+        x_hat_sequence = decoder(z_q_sequence_st)
+        reconstruction_loss = MSE(x_hat_sequence, X_sequence)
+        commitment_loss = beta * MSE(quantized_sequence.detach(), z_e_sequence)
+        codebook_loss = MSE(quantized_sequence, z_e_sequence.detach())
+        loss_vqvae = reconstruction_loss + commitment_loss + codebook_loss
+        
+        optimizer_vqvae.zero_grad()
+        loss_vqvae.backward()
+        optimizer_vqvae.step()
