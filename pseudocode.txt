@@ -1,24 +1,33 @@
-Sequence x = (x1...xn)
-encoder = encode(x)
-decoder = map(z_q -> x_hat)
-embedding_vectors = [_]*k
-codebook = mat(k,d)
-quantizer = ...
-loss_vqvae = loss(...)
-optimizer_vqvae = ...
+# Define modules
+encoder = Encoder()
+decoder = Decoder()
+codebook = Codebook(k, d)
+hmm = HMM(num_states=k)
+optimizer_vqvae = Adam([...])
+optimizer_hmm = Adam([...])
 
-train_vqvae(epochs, data_loader, encoder, decoder, codebook, optimizer_vqvae):
-    for epoch in range(1,epochs):
+def train_vqvae_hmm(epochs, data_loader):
+    for epoch in range(epochs):
         for x_seq in data_loader:
-        z_e_seq = encoder(x_seq)
-        quantized_sequence, codebook_indices = quantize(z_e_sequence, codebook)
-        z_q_sequence_st = z_e_sequence + (quantized_sequence - z_e_sequence).detach()
-        x_hat_sequence = decoder(z_q_sequence_st)
-        reconstruction_loss = MSE(x_hat_sequence, X_sequence)
-        commitment_loss = beta * MSE(quantized_sequence.detach(), z_e_sequence)
-        codebook_loss = MSE(quantized_sequence, z_e_sequence.detach())
-        loss_vqvae = reconstruction_loss + commitment_loss + codebook_loss
-        
-        optimizer_vqvae.zero_grad()
-        loss_vqvae.backward()
-        optimizer_vqvae.step()
+            z_e_seq = encoder(x_seq)
+            z_q_seq, code_indices = quantize(z_e_seq, codebook)
+            z_q_seq_st = z_e_seq + (z_q_seq - z_e_seq).detach()
+            x_hat_seq = decoder(z_q_seq_st)
+
+            recon_loss = MSE(x_hat_seq, x_seq)
+            commit_loss = beta * MSE(z_e_seq, z_q_seq.detach())
+            codebook_loss = MSE(z_q_seq, z_e_seq.detach())
+            loss_vqvae = recon_loss + commit_loss + codebook_loss
+
+            optimizer_vqvae.zero_grad()
+            loss_vqvae.backward()
+            optimizer_vqvae.step()
+
+        # Train HMM on the sequence of discrete code indices
+        all_code_indices = collect_indices_from_dataset(encoder, codebook, data_loader)
+        hmm.train_em(all_code_indices)
+
+def sample_from_vqvae_hmm(seq_len):
+    z_idx_seq = hmm.sample(seq_len)
+    z_q_seq = codebook.lookup(z_idx_seq)
+    return decoder(z_q_seq)
