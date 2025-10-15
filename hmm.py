@@ -1,6 +1,7 @@
 import tensorflow_probability as tfp
 tfd = tfp.distributions
 
+# https://www.tensorflow.org/probability/api_docs/python/tfp/distributions/HiddenMarkovModel
 # A simple weather model.
 
 # Represent a cold day with 0 and a hot day with 1.
